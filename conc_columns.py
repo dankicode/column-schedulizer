@@ -1,4 +1,4 @@
-from eng_module import rebar
+import rebar
 
 
 MAX_COL_VERT_BAR_SPACING = 6  # inches, c/c (default)
