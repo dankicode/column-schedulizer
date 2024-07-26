@@ -1,31 +1,26 @@
 import streamlit as st
 from io import StringIO
 import pandas as pd
-import importlib
-import eng_module
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-importlib.reload(eng_module)
-# importlib.reload(eng_module.rebar)
-from eng_module import ram_column_schedule as rcs
-from eng_module import columns
-from eng_module import aci_318_14_materials
-from eng_module import rebar
+import ram_column_schedule as rcs
+import conc_columns
+import aci_318_14_materials
+import rebar
 
 # Import geometry functions for creating rectangular sections
 from sectionproperties.pre.library.primitive_sections import rectangular_section
 from concreteproperties.pre import add_bar_rectangular_array
 
-# from concreteproperties.pre import add_bar_rectangular_array
 
 ## Import analysis section
 from concreteproperties.concrete_section import ConcreteSection
 
 st.write("# RAM Column Schedule")
 
-
+# Invite user to upload the RAM csv file
 concrete_design_csv = st.file_uploader(
     "Upload Concrete Design Output From RAM (*.csv)",
     "csv",
@@ -44,11 +39,9 @@ if concrete_design_csv is not None:
         parsed_data.append(split_data)
 
     column_data = rcs.extract_RAM_conc_column_data(parsed_data)
-    # st.write(column_data)
-
     sched_df = rcs.create_full_RAM_concrete_column_schedule(column_data)
+    # display the schedule DataFrame
     st.dataframe(sched_df)
-
     st.divider()
 
     st.write("# Design Inspection")
@@ -99,6 +92,8 @@ if concrete_design_csv is not None:
     steel = aci_318_14_materials.create_rebar_ACI318(60)  # hardcoded fy for now
 
     col_geom = rectangular_section(h, b, conc).align_center()
+
+    # User must input the rebar count per side
     n_bars_b = st.number_input(
         """The number of bars per side along the x-direction 
         (note this will include the corners):""",
@@ -110,8 +105,8 @@ if concrete_design_csv is not None:
         min_value=2,
         value="min",
     )
-    x_spacing = columns.calc_spacing_per_side(b, n_bars_b, d_bar=bar_diam)
-    y_spacing = columns.calc_spacing_per_side(h, n_bars_h, d_bar=bar_diam)
+    x_spacing = conc_columns.calc_spacing_per_side(b, n_bars_b, d_bar=bar_diam)
+    y_spacing = conc_columns.calc_spacing_per_side(h, n_bars_h, d_bar=bar_diam)
     anchor = (-b / 2 + 1.5 + 0.375 + bar_diam / 2, -h / 2 + 1.5 + 0.375 + bar_diam / 2)
     col_geom = add_bar_rectangular_array(
         col_geom,
@@ -124,6 +119,8 @@ if concrete_design_csv is not None:
         anchor,
         exterior_only=True,
     )
+
+    # Show column geometry with rebar layout
     with geometry_column:
         st.set_option("deprecation.showPyplotGlobalUse", False)
         st.pyplot(col_geom.plot_geometry().plot())
@@ -170,8 +167,8 @@ if concrete_design_csv is not None:
         n_y.append(result.n)
         m_y.append(result.m_y)
 
-    phi_x = np.asarray(columns.calc_phi(eps_t_x))
-    phi_y = np.asarray(columns.calc_phi(eps_t_y))
+    phi_x = np.asarray(conc_columns.calc_phi(eps_t_x))
+    phi_y = np.asarray(conc_columns.calc_phi(eps_t_y))
 
     m_x = np.asarray(m_x)
     m_y = np.asarray(m_y)
@@ -187,7 +184,7 @@ if concrete_design_csv is not None:
     # Plot Moment Interaction Diagram about x
     phi_Pnx = phi_x * n_x
     phi_Mnx = phi_x * m_x / 12  # kip-ft
-    phi_Pn_max = 0.65 * columns.calc_Pn(b, h, fpc, bar_quantity, bar_area)
+    phi_Pn_max = 0.65 * conc_columns.calc_Pn(b, h, fpc, bar_quantity, bar_area)
 
     fig, ax = plt.subplots()
     ax.plot(phi_Mnx, phi_Pnx)
@@ -237,6 +234,7 @@ if concrete_design_csv is not None:
     st.divider()
 
     st.write("## Quick Calculator")
+
     st.write("Calculates Phi*Pn for a nonslender column")
     num_bars = st.number_input("Rebar Quantity", min_value=4, value="min")
     # rebar_size = st.text_input("Rebar Size")
@@ -245,7 +243,9 @@ if concrete_design_csv is not None:
     col_width = st.number_input("Column Width", min_value=6, value=12)
     col_depth = st.number_input("Column Depth", min_value=6, value=12)
 
-    phi_pn = 0.65 * columns.calc_Pn(col_width, col_depth, fpc, num_bars, rebar_area)
+    phi_pn = 0.65 * conc_columns.calc_Pn(
+        col_width, col_depth, fpc, num_bars, rebar_area
+    )
     area_steel_pct = num_bars * rebar_area / (col_width * col_depth)
 
     st.latex(rf"\large \phi P_n = {round(phi_pn, 2)}")
