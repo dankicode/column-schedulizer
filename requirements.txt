@@ -1,1 +1,2 @@
 pfse_starterkit
+sectionproperties==3.2.2
