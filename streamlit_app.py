@@ -121,7 +121,7 @@ if concrete_design_csv is not None:
 
     # Show column geometry with rebar layout
     with geometry_column:
-        st.set_option("deprecation.showPyplotGlobalUse", False)
+        # st.set_option("deprecation.showPyplotGlobalUse", False)
         st.pyplot(col_geom.plot_geometry().plot())
 
     # Aanalysis Section
@@ -172,7 +172,6 @@ if concrete_design_csv is not None:
     m_x = np.asarray(m_x)
     m_y = np.asarray(m_y)
     n_x = np.asarray(n_x)
-    st.write(n_x)
     n_y = np.asarray(n_y)
 
     pu = float(designs_dict["pu"])
