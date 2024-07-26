@@ -19,7 +19,7 @@ def calculate_beta_1(fpc: float) -> float:
     if fpc >= 2.5 and fpc <= 4.0:
         beta_1 = 0.85
     elif fpc > 4.0 and fpc < 8.0:
-        beta_1 = 0.85 - (0.5 * (fpc - 4))
+        beta_1 = 0.85 - (0.05 * (fpc - 4))
     elif fpc >= 8.0:
         beta_1 = 0.65
     else:
